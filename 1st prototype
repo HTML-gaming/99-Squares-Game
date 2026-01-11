@@ -1,183 +1,212 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>99 Squares Guessing Game</title>
-
-<style>
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+  <meta charset="UTF-8" />
+  <title>99 Squares Guessing Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 { margin-bottom: 5px; }
+    .rules {
+      max-width: 700px;
+      margin: 0 auto 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: left;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+      max-width: 500px;
+      margin: 20px auto;
+    }
+    .cell {
+      background: #c8a165;
+      border-radius: 6px;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      position: relative;
+      user-select: none;
+    }
+    .cell.opened {
+      background: #eee;
+      cursor: default;
+    }
+    .circle {
+      width: 60%;
+      height: 60%;
+      border-radius: 50%;
+      display: none;
+    }
+    .cell.opened .circle { display: block; }.status {
+  margin-top: 15px;
+  font-weight: bold;
 }
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f2f2f2;
-  text-align: center;
-  padding: 10px;
-}
+.hidden { display: none; }
 
-h1 {
-  font-size: 22px;
-  margin-bottom: 5px;
-}
-
-.rules {
-  background: #fff;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 14px;
-  margin-bottom: 10px;
-  text-align: left;
-}
-
-.controls {
-  margin: 10px 0;
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
 }
 
 input {
-  padding: 8px;
-  font-size: 16px;
-  width: 100px;
+  padding: 6px;
+  width: 80px;
   text-align: center;
 }
 
-button {
-  padding: 10px 16px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  background: #333;
-  color: #fff;
-  margin-left: 5px;
-}
-
-.status {
-  font-weight: bold;
-  margin: 10px 0;
-  font-size: 16px;
-}
-
-.board {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 5px;
-  max-width: 95vw;
-  margin: auto;
-}
-
-.cell {
-  background: #c8a165;
-  border-radius: 6px;
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.cell.opened {
-  background: #eee;
-}
-
-.circle {
-  width: 65%;
-  height: 65%;
-  border-radius: 50%;
-  display: none;
-}
-
-.cell.opened .circle {
-  display: block;
-}
-
-</style>
+  </style>
 </head>
+<body><h1>🎲 99 Squares Guessing Game</h1>
+<p>Open caps, reveal colors, and find the <b>Green winning square</b> in 20 tries!</p><div class="rules">
+  <h3>Rules</h3>
+  <ol>
+    <li>If 20 squares are opened, the game is over.</li>
+    <li>If 3 squares of the same color are opened, you may ask <b>one</b> indirect Yes/No question.</li>
+    <li>The question must be Yes/No and must <b>not contain numbers</b>.</li>
+  </ol>
+</div><div>
+  <label><b>Host: Enter Winning Number (1–99): </b></label>
+  <input type="password" id="winningInput" />
+  <button onclick="startGame()">Start Game</button>
+</div><div class="status" id="status"></div><div class="board" id="board"></div><script>
+  const MAX_TRIES = 20;
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
 
-<body>
+  let board = {};
+  let opened = new Set();
+  let colorCount = {};
+  let tries = 0;
+  let questionUsed = false;
+  let winningNumber = null;
 
-<h1>🎲 99 Squares Guessing Game</h1>
+  function startGame() {
+    const input = document.getElementById('winningInput').value;
+    winningNumber = parseInt(input);
 
-<div class="rules">
-<b>Rules</b>
-<ol>
-<li>20 squares opened → Game Over</li>
-<li>3 same colors → Ask one Yes/No question</li>
-<li>No numbers allowed in question</li>
-</ol>
-</div>
+    if (!winningNumber || winningNumber < 1 || winningNumber > 99) {
+      alert('Enter a valid winning number between 1 and 99');
+      return;
+    }
 
-<div class="controls">
-<input type="password" id="win" placeholder="Host #" />
-<button onclick="start()">Start</button>
-</div>
-
-<div class="status" id="status"></div>
-<div class="board" id="board"></div>
-
-<script>
-const MAX = 20;
-let board={}, opened=new Set(), count={}, tries=0, asked=false, win;
-
-function start(){
-  win = parseInt(document.getElementById('win').value);
-  if(!win || win<1 || win>99){ alert('Enter 1–99'); return;}
-  setup();
-  draw();
-  document.getElementById('status').innerText='Game Started';
-}
-
-function setup(){
-  board={}; opened.clear(); count={}; tries=0; asked=false;
-  let colors=[];
-  ['Red','Pink','Yellow','Blue'].forEach(c=>{for(let i=0;i<20;i++)colors.push(c)});
-  for(let i=0;i<19;i++)colors.push('Black');
-  shuffle(colors);
-  let k=0;
-  for(let i=1;i<=99;i++) board[i]=(i===win)?'Green':colors[k++];
-}
-
-function draw(){
-  const b=document.getElementById('board'); b.innerHTML='';
-  for(let i=1;i<=100;i++){
-    const d=document.createElement('div');
-    if(i===100){d.style.visibility='hidden'; b.appendChild(d); continue;}
-    d.className='cell'; d.innerText=i;
-    const c=document.createElement('div');
-    c.className='circle'; c.style.background=board[i];
-    d.appendChild(c);
-    d.onclick=()=>open(i,d);
-    b.appendChild(d);
+    setupBoard();
+    renderBoard();
+    statusEl.textContent = `Game started! Tries left: ${MAX_TRIES}`;
   }
-}
 
-function open(n,d){
-  if(opened.has(n)||tries>=MAX) return;
-  opened.add(n); tries++; d.classList.add('opened'); d.innerText='';
-  const col=board[n]; count[col]=(count[col]||0)+1;
+  function setupBoard() {
+    board = {};
+    opened.clear();
+    colorCount = {};
+    tries = 0;
+    questionUsed = false;
+    boardEl.innerHTML = '';
 
-  if(n===win){ status('🎉 YOU WIN!'); lock(); return;}
-  if(count[col]===3 && col!=='Green' && !asked){
-    asked=true;
-    setTimeout(()=>ask(),200);
+    let colors = [];
+    ['Red', 'Pink', 'Yellow', 'Blue'].forEach(c => {
+      for (let i = 0; i < 20; i++) colors.push(c);
+    });
+    for (let i = 0; i < 19; i++) colors.push('Black');
+
+    shuffle(colors);
+
+    let idx = 0;
+    for (let i = 1; i <= 99; i++) {
+      if (i === winningNumber) board[i] = 'Green';
+      else board[i] = colors[idx++];
+    }
   }
-  if(tries>=MAX){ status('💀 GAME OVER'); lock(); return;}
-  status(`Opened ${tries}/${MAX}`);
-}
 
-function ask(){
-  const q=prompt('Ask a Yes/No question (no numbers)');
-  if(/\d/.test(q)) alert('Invalid Question');
-  else alert('Host answers YES or NO');
-}
+  function renderBoard() {
+    for (let i = 1; i <= 100; i++) {
+      const cell = document.createElement('div');
+      if (i === 100) {
+        cell.style.visibility = 'hidden';
+        boardEl.appendChild(cell);
+        continue;
+      }
 
-function status(t){ document.getElementById('status').innerText=t; }
-function lock(){ document.querySelectorAll('.cell').forEach(x=>x.onclick=null); }
-function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
-</script>
+      cell.className = 'cell';
+      cell.textContent = i;
 
-</body>
+      const circle = document.createElement('div');
+      circle.className = 'circle';
+      circle.style.background = board[i];
+      cell.appendChild(circle);
+
+      cell.onclick = () => openCell(i, cell);
+      boardEl.appendChild(cell);
+    }
+  }
+
+  function openCell(num, cell) {
+    if (opened.has(num) || tries >= MAX_TRIES) return;
+
+    opened.add(num);
+    tries++;
+    cell.classList.add('opened');
+    cell.textContent = '';
+
+    const color = board[num];
+    colorCount[color] = (colorCount[color] || 0) + 1;
+
+    if (num === winningNumber) {
+      statusEl.textContent = '🎉 You found the GREEN square! You win!';
+      disableBoard();
+      return;
+    }
+
+    if (color !== 'Green' && colorCount[color] === 3 && !questionUsed) {
+      setTimeout(() => askQuestion(), 200);
+    }
+
+    if (tries >= MAX_TRIES) {
+      statusEl.textContent = `💀 Game Over! Winning number was ${winningNumber}`;
+      disableBoard();
+      return;
+    }
+
+    statusEl.textContent = `Opened ${tries} / ${MAX_TRIES} squares`;
+  }
+
+  function askQuestion() {
+    const q = prompt('You opened 3 same colors! Ask ONE Yes/No question (no numbers):');
+    if (!q) return;
+
+    if (/\d/.test(q)) {
+      alert('Invalid question. Numbers are not allowed.');
+      return;
+    }
+
+    questionUsed = true;
+    alert('Host answers: YES or NO (decided by host)');
+  }
+
+  function disableBoard() {
+    document.querySelectorAll('.cell').forEach(c => c.onclick = null);
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+</script></body>
 </html>
